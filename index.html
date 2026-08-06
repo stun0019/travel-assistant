@@ -1,0 +1,1842 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  />
+
+  <meta
+    name="description"
+    content="首爾旅行助手：管理行程、預算、待辦事項、景點與匯率換算。"
+  />
+
+  <title>Seoul Travel Assistant</title>
+
+  <style>
+    :root {
+      --bg: #f4f6fb;
+      --surface: rgba(255, 255, 255, 0.9);
+      --surface-solid: #ffffff;
+      --surface-soft: #eef2ff;
+      --text: #182033;
+      --text-soft: #667085;
+      --border: rgba(24, 32, 51, 0.1);
+      --primary: #5965e0;
+      --primary-dark: #424ebd;
+      --success: #219653;
+      --danger: #d64545;
+      --warning: #f2a93b;
+      --shadow: 0 14px 40px rgba(31, 42, 68, 0.08);
+      --radius-lg: 24px;
+      --radius-md: 18px;
+      --radius-sm: 12px;
+      --max-width: 1240px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family:
+        Inter,
+        "Noto Sans TC",
+        "PingFang TC",
+        "Microsoft JhengHei",
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(
+          circle at top right,
+          rgba(89, 101, 224, 0.18),
+          transparent 34%
+        ),
+        radial-gradient(
+          circle at bottom left,
+          rgba(255, 179, 71, 0.14),
+          transparent 30%
+        ),
+        var(--bg);
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .app-shell {
+      width: min(calc(100% - 32px), var(--max-width));
+      margin: 0 auto;
+      padding: 24px 0 56px;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      min-height: 280px;
+      display: grid;
+      grid-template-columns: 1.4fr 0.8fr;
+      gap: 28px;
+      align-items: center;
+      padding: 36px;
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      border-radius: 32px;
+      background:
+        linear-gradient(
+          135deg,
+          rgba(28, 38, 89, 0.96),
+          rgba(89, 101, 224, 0.92)
+        );
+      color: #ffffff;
+      box-shadow: var(--shadow);
+    }
+
+    .hero::before,
+    .hero::after {
+      content: "";
+      position: absolute;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .hero::before {
+      width: 260px;
+      height: 260px;
+      right: -80px;
+      top: -110px;
+    }
+
+    .hero::after {
+      width: 180px;
+      height: 180px;
+      right: 120px;
+      bottom: -110px;
+    }
+
+    .hero-content,
+    .countdown-card {
+      position: relative;
+      z-index: 1;
+    }
+
+    .eyebrow {
+      margin: 0 0 12px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      opacity: 0.75;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: clamp(2.2rem, 5vw, 4.6rem);
+      line-height: 1;
+    }
+
+    .hero-description {
+      max-width: 620px;
+      margin: 20px 0 0;
+      color: rgba(255, 255, 255, 0.8);
+      line-height: 1.8;
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 24px;
+    }
+
+    .hero-chip {
+      padding: 9px 13px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.1);
+      font-size: 0.88rem;
+      backdrop-filter: blur(10px);
+    }
+
+    .countdown-card {
+      padding: 28px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: var(--radius-lg);
+      background: rgba(255, 255, 255, 0.11);
+      backdrop-filter: blur(18px);
+    }
+
+    .countdown-label {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 0.88rem;
+    }
+
+    .countdown-number {
+      margin: 8px 0;
+      font-size: clamp(3rem, 7vw, 5rem);
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .countdown-date {
+      color: rgba(255, 255, 255, 0.76);
+    }
+
+    .toolbar {
+      position: sticky;
+      top: 12px;
+      z-index: 20;
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      margin: 18px 0 24px;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.78);
+      box-shadow: 0 10px 30px rgba(31, 42, 68, 0.07);
+      backdrop-filter: blur(18px);
+      scrollbar-width: none;
+    }
+
+    .toolbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .nav-button {
+      flex: 0 0 auto;
+      padding: 10px 14px;
+      border: 0;
+      border-radius: 12px;
+      background: transparent;
+      color: var(--text-soft);
+      font-weight: 700;
+    }
+
+    .nav-button:hover {
+      background: var(--surface-soft);
+      color: var(--primary);
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 20px;
+    }
+
+    .panel {
+      grid-column: span 4;
+      padding: 24px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+    }
+
+    .panel-wide {
+      grid-column: span 8;
+    }
+
+    .panel-full {
+      grid-column: 1 / -1;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .panel-title-group h2 {
+      margin: 0;
+      font-size: 1.15rem;
+    }
+
+    .panel-title-group p {
+      margin: 6px 0 0;
+      color: var(--text-soft);
+      font-size: 0.86rem;
+      line-height: 1.5;
+    }
+
+    .icon-badge {
+      display: grid;
+      width: 42px;
+      height: 42px;
+      place-items: center;
+      border-radius: 14px;
+      background: var(--surface-soft);
+      font-size: 1.2rem;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .summary-card {
+      padding: 18px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--surface-solid);
+    }
+
+    .summary-label {
+      color: var(--text-soft);
+      font-size: 0.82rem;
+    }
+
+    .summary-value {
+      margin-top: 8px;
+      font-size: 1.45rem;
+      font-weight: 800;
+    }
+
+    .progress-track {
+      height: 12px;
+      margin-top: 18px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #eaecf3;
+    }
+
+    .progress-bar {
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--primary), #8d78ff);
+      transition: width 0.3s ease;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .field {
+      display: grid;
+      gap: 7px;
+    }
+
+    .field label {
+      color: var(--text-soft);
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      outline: none;
+      background: var(--surface-solid);
+      color: var(--text);
+      transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+    }
+
+    input,
+    select {
+      height: 44px;
+      padding: 0 13px;
+    }
+
+    textarea {
+      min-height: 100px;
+      padding: 12px 13px;
+      resize: vertical;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: rgba(89, 101, 224, 0.65);
+      box-shadow: 0 0 0 4px rgba(89, 101, 224, 0.1);
+    }
+
+    .button {
+      min-height: 42px;
+      padding: 10px 15px;
+      border: 0;
+      border-radius: 12px;
+      background: var(--primary);
+      color: #ffffff;
+      font-weight: 800;
+      transition:
+        transform 0.15s ease,
+        background 0.15s ease;
+    }
+
+    .button:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+    }
+
+    .button-secondary {
+      background: var(--surface-soft);
+      color: var(--primary);
+    }
+
+    .button-secondary:hover {
+      background: #dfe4ff;
+    }
+
+    .button-danger {
+      background: #fff0f0;
+      color: var(--danger);
+    }
+
+    .button-danger:hover {
+      background: #ffe2e2;
+    }
+
+    .button-small {
+      min-height: 34px;
+      padding: 7px 11px;
+      font-size: 0.8rem;
+    }
+
+    .inline-form {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .list {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .list-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 13px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface-solid);
+    }
+
+    .list-item-main {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      min-width: 0;
+    }
+
+    .list-item-text {
+      overflow-wrap: anywhere;
+    }
+
+    .list-item.completed .list-item-text {
+      color: var(--text-soft);
+      text-decoration: line-through;
+    }
+
+    .checkbox {
+      width: 20px;
+      height: 20px;
+      accent-color: var(--primary);
+    }
+
+    .empty-state {
+      padding: 28px 14px;
+      border: 1px dashed var(--border);
+      border-radius: var(--radius-md);
+      color: var(--text-soft);
+      text-align: center;
+    }
+
+    .itinerary-form {
+      display: grid;
+      grid-template-columns: 100px 120px 1fr auto;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 14px;
+    }
+
+    .timeline-day {
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--surface-solid);
+    }
+
+    .timeline-day-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      background: #f7f8fc;
+    }
+
+    .timeline-day-header h3 {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .timeline-events {
+      display: grid;
+    }
+
+    .timeline-event {
+      display: grid;
+      grid-template-columns: 80px 1fr auto;
+      gap: 12px;
+      align-items: start;
+      padding: 15px 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .timeline-time {
+      color: var(--primary);
+      font-weight: 800;
+    }
+
+    .timeline-event-title {
+      font-weight: 700;
+      line-height: 1.5;
+    }
+
+    .currency-box {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 12px;
+      align-items: end;
+    }
+
+    .currency-equals {
+      padding-bottom: 12px;
+      color: var(--text-soft);
+      font-weight: 800;
+    }
+
+    .rate-note {
+      margin-top: 14px;
+      padding: 12px;
+      border-radius: var(--radius-sm);
+      background: #fff8e8;
+      color: #8b5e12;
+      font-size: 0.84rem;
+      line-height: 1.6;
+    }
+
+    .place-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .place-card {
+      display: grid;
+      gap: 12px;
+      padding: 17px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--surface-solid);
+    }
+
+    .place-card h3 {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .place-card p {
+      margin: 0;
+      color: var(--text-soft);
+      font-size: 0.84rem;
+      line-height: 1.6;
+    }
+
+    .place-card-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: auto;
+    }
+
+    .place-card-actions a,
+    .place-card-actions button {
+      flex: 1;
+      text-align: center;
+    }
+
+    .budget-form {
+      display: grid;
+      grid-template-columns: 1fr 140px auto;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .expense-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .expense-item {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 12px;
+      align-items: center;
+      padding: 13px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface-solid);
+    }
+
+    .expense-name {
+      font-weight: 700;
+    }
+
+    .expense-amount {
+      font-weight: 800;
+    }
+
+    .footer {
+      padding: 32px 0 0;
+      color: var(--text-soft);
+      font-size: 0.82rem;
+      text-align: center;
+    }
+
+    .toast {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      z-index: 100;
+      max-width: min(360px, calc(100% - 40px));
+      padding: 14px 18px;
+      border-radius: 14px;
+      background: #20283d;
+      color: #ffffff;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(20px);
+      transition:
+        opacity 0.25s ease,
+        transform 0.25s ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 960px) {
+      .hero {
+        grid-template-columns: 1fr;
+      }
+
+      .panel,
+      .panel-wide {
+        grid-column: span 6;
+      }
+
+      .panel-full {
+        grid-column: 1 / -1;
+      }
+
+      .summary-grid,
+      .place-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .itinerary-form {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .itinerary-form .button {
+        grid-column: 1 / -1;
+      }
+    }
+
+    @media (max-width: 680px) {
+      .app-shell {
+        width: min(calc(100% - 20px), var(--max-width));
+        padding-top: 10px;
+      }
+
+      .hero {
+        min-height: auto;
+        padding: 26px 20px;
+        border-radius: 24px;
+      }
+
+      .hero-description {
+        font-size: 0.92rem;
+      }
+
+      .countdown-card {
+        padding: 20px;
+      }
+
+      .dashboard-grid {
+        gap: 14px;
+      }
+
+      .panel,
+      .panel-wide,
+      .panel-full {
+        grid-column: 1 / -1;
+        padding: 18px;
+        border-radius: 20px;
+      }
+
+      .form-row,
+      .currency-box,
+      .budget-form,
+      .itinerary-form {
+        grid-template-columns: 1fr;
+      }
+
+      .currency-equals {
+        display: none;
+      }
+
+      .timeline-event {
+        grid-template-columns: 62px 1fr;
+      }
+
+      .timeline-event .button {
+        grid-column: 2;
+        justify-self: start;
+      }
+
+      .expense-item {
+        grid-template-columns: 1fr auto;
+      }
+
+      .expense-item .button {
+        grid-column: 1 / -1;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="app-shell">
+    <section class="hero">
+      <div class="hero-content">
+        <p class="eyebrow">TRAVEL OS · SEOUL 2026</p>
+
+        <h1>首爾旅行助手</h1>
+
+        <p class="hero-description">
+          集中管理行程、預算、待辦事項、景點與匯率換算。
+          所有資料會儲存在目前瀏覽器中。
+        </p>
+
+        <div class="hero-meta">
+          <span class="hero-chip">韓國・首爾</span>
+          <span class="hero-chip">2026 年 11 月</span>
+          <span class="hero-chip">V0.1</span>
+        </div>
+      </div>
+
+      <div class="countdown-card">
+        <div class="countdown-label">距離出發還有</div>
+        <div class="countdown-number" id="countdownNumber">--</div>
+        <div class="countdown-date">
+          天・預設出發日：
+          <span id="departureDateText"></span>
+        </div>
+      </div>
+    </section>
+
+    <nav class="toolbar" aria-label="頁面導覽">
+      <button class="nav-button" data-target="overview">總覽</button>
+      <button class="nav-button" data-target="itinerary">行程</button>
+      <button class="nav-button" data-target="budget">預算</button>
+      <button class="nav-button" data-target="todo">待辦</button>
+      <button class="nav-button" data-target="currency">匯率</button>
+      <button class="nav-button" data-target="places">景點</button>
+      <button class="nav-button" data-target="settings">設定</button>
+    </nav>
+
+    <div class="dashboard-grid">
+      <section class="panel panel-wide" id="overview">
+        <div class="panel-header">
+          <div class="panel-title-group">
+            <h2>旅行總覽</h2>
+            <p>快速查看目前準備進度與預算狀況。</p>
+          </div>
+
+          <div class="icon-badge">✈</div>
+        </div>
+
+        <div class="summary-grid">
+          <div class="summary-card">
+            <div class="summary-label">旅行天數</div>
+            <div class="summary-value" id="tripDaysSummary">5 天</div>
+          </div>
+
+          <div class="summary-card">
+            <div class="summary-label">待辦完成</div>
+            <div class="summary-value" id="todoSummary">0 / 0</div>
+          </div>
+
+          <div class="summary-card">
+            <div class="summary-label">剩餘預算</div>
+            <div class="summary-value" id="remainingBudgetSummary">
+              NT$0
+            </div>
+          </div>
+        </div>
+
+        <div class="progress-track">
+          <div class="progress-bar" id="todoProgressBar"></div>
+        </div>
+      </section>
+
+      <section class="panel" id="settings">
+        <div class="panel-header">
+          <div class="panel-title-group">
+            <h2>旅行設定</h2>
+            <p>修改出發日期與旅行天數。</p>
+          </div>
+
+          <div class="icon-badge">⚙</div>
+        </div>
+
+        <div class="form-row">
+          <div class="field">
+            <label for="departureDate">出發日期</label>
+            <input id="departureDate" type="date" />
+          </div>
+
+          <div class="field">
+            <label for="tripDays">旅行天數</label>
+            <input
+              id="tripDays"
+              type="number"
+              min="1"
+              max="30"
+              value="5"
+            />
+          </div>
+        </div>
+
+        <button class="button" id="saveSettingsButton" type="button">
+          儲存設定
+        </button>
+      </section>
+
+      <section class="panel panel-full" id="itinerary">
+        <div class="panel-header">
+          <div class="panel-title-group">
+            <h2>每日行程</h2>
+            <p>新增各天的時間、地點與活動。</p>
+          </div>
+
+          <div class="icon-badge">📅</div>
+        </div>
+
+        <div class="itinerary-form">
+          <select id="itineraryDay" aria-label="行程天數"></select>
+
+          <input
+            id="itineraryTime"
+            type="time"
+            value="09:00"
+            aria-label="行程時間"
+          />
+
+          <input
+            id="itineraryTitle"
+            type="text"
+            placeholder="例如：抵達仁川機場"
+            maxlength="80"
+            aria-label="行程內容"
+          />
+
+          <button class="button" id="addItineraryButton" type="button">
+            新增行程
+          </button>
+        </div>
+
+        <div class="timeline" id="itineraryList"></div>
+      </section>
+
+      <section class="panel panel-wide" id="budget">
+        <div class="panel-header">
+          <div class="panel-title-group">
+            <h2>旅行預算</h2>
+            <p>記錄整體預算與已支出項目。</p>
+          </div>
+
+          <div class="icon-badge">💰</div>
+        </div>
+
+        <div class="summary-grid">
+          <div class="summary-card">
+            <div class="summary-label">總預算</div>
+            <div class="summary-value" id="totalBudgetValue">NT$0</div>
+          </div>
+
+          <div class="summary-card">
+            <div class="summary-label">已支出</div>
+            <div class="summary-value" id="spentBudgetValue">NT$0</div>
+          </div>
+
+          <div class="summary-card">
+            <div class="summary-label">剩餘</div>
+            <div class="summary-value" id="remainingBudgetValue">NT$0</div>
+          </div>
+        </div>
+
+        <div class="field" style="margin-top: 18px">
+          <label for="totalBudgetInput">設定總預算（新台幣）</label>
+
+          <div class="inline-form">
+            <input
+              id="totalBudgetInput"
+              type="number"
+              min="0"
+              step="100"
+              placeholder="例如：30000"
+            />
+
+            <button class="button" id="saveBudgetButton" type="button">
+              儲存
+            </button>
+          </div>
+        </div>
+
+        <div class="budget-form">
+          <input
+            id="expenseName"
+            type="text"
+            placeholder="支出項目，例如：機票"
+            maxlength="50"
+          />
+
+          <input
+            id="expenseAmount"
+            type="number"
+            min="0"
+            step="1"
+            placeholder="金額"
+          />
+
+          <button class="button" id="addExpenseButton" type="button">
+            新增支出
+          </button>
+        </div>
+
+        <div class="expense-list" id="expenseList"></div>
+      </section>
+
+      <section class="panel" id="todo">
+        <div class="panel-header">
+          <div class="panel-title-group">
+            <h2>旅行待辦</h2>
+            <p>紀錄出發前需要完成的事項。</p>
+          </div>
+
+          <div class="icon-badge">✓</div>
+        </div>
+
+        <div class="inline-form">
+          <input
+            id="todoInput"
+            type="text"
+            placeholder="新增待辦事項"
+            maxlength="60"
+          />
+
+          <button class="button" id="addTodoButton" type="button">
+            新增
+          </button>
+        </div>
+
+        <ul class="list" id="todoList"></ul>
+      </section>
+
+      <section class="panel" id="currency">
+        <div class="panel-header">
+          <div class="panel-title-group">
+            <h2>匯率換算</h2>
+            <p>手動設定匯率，快速換算韓元與台幣。</p>
+          </div>
+
+          <div class="icon-badge">₩</div>
+        </div>
+
+        <div class="field" style="margin-bottom: 16px">
+          <label for="exchangeRate">
+            1 新台幣可兌換多少韓元
+          </label>
+
+          <input
+            id="exchangeRate"
+            type="number"
+            min="0.01"
+            step="0.01"
+            value="43"
+          />
+        </div>
+
+        <div class="currency-box">
+          <div class="field">
+            <label for="twdInput">新台幣 TWD</label>
+            <input id="twdInput" type="number" min="0" value="1000" />
+          </div>
+
+          <div class="currency-equals">＝</div>
+
+          <div class="field">
+            <label for="krwOutput">韓元 KRW</label>
+            <input id="krwOutput" type="text" readonly />
+          </div>
+        </div>
+
+        <div class="rate-note">
+          目前版本不會自動取得即時匯率。出發前可依銀行、換匯所或信用卡匯率手動更新。
+        </div>
+      </section>
+
+      <section class="panel panel-wide" id="places">
+        <div class="panel-header">
+          <div class="panel-title-group">
+            <h2>收藏景點</h2>
+            <p>保存景點並快速開啟地圖搜尋。</p>
+          </div>
+
+          <div class="icon-badge">📍</div>
+        </div>
+
+        <div class="form-row">
+          <div class="field">
+            <label for="placeName">景點名稱</label>
+            <input
+              id="placeName"
+              type="text"
+              placeholder="例如：景福宮"
+              maxlength="50"
+            />
+          </div>
+
+          <div class="field">
+            <label for="placeCategory">分類</label>
+            <select id="placeCategory">
+              <option value="景點">景點</option>
+              <option value="美食">美食</option>
+              <option value="咖啡">咖啡</option>
+              <option value="購物">購物</option>
+              <option value="住宿">住宿</option>
+              <option value="其他">其他</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field" style="margin-top: 12px">
+          <label for="placeNote">備註</label>
+          <textarea
+            id="placeNote"
+            placeholder="例如：建議早上前往、可穿韓服入場"
+            maxlength="180"
+          ></textarea>
+        </div>
+
+        <button
+          class="button"
+          id="addPlaceButton"
+          type="button"
+          style="margin: 12px 0 18px"
+        >
+          新增景點
+        </button>
+
+        <div class="place-grid" id="placeList"></div>
+      </section>
+    </div>
+
+    <footer class="footer">
+      Seoul Travel Assistant V0.1 · 資料儲存在目前裝置的瀏覽器中
+    </footer>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    "use strict";
+
+    const STORAGE_KEY = "seoul-travel-assistant-v01";
+
+    const defaultState = {
+      departureDate: "2026-11-27",
+      tripDays: 5,
+      totalBudget: 30000,
+      exchangeRate: 43,
+      todos: [
+        {
+          id: crypto.randomUUID(),
+          text: "確認護照有效期限",
+          completed: false
+        },
+        {
+          id: crypto.randomUUID(),
+          text: "訂購機票",
+          completed: false
+        },
+        {
+          id: crypto.randomUUID(),
+          text: "預訂住宿",
+          completed: false
+        },
+        {
+          id: crypto.randomUUID(),
+          text: "購買韓國 eSIM",
+          completed: false
+        },
+        {
+          id: crypto.randomUUID(),
+          text: "準備 T-money 交通卡",
+          completed: false
+        }
+      ],
+      itinerary: [
+        {
+          id: crypto.randomUUID(),
+          day: 1,
+          time: "09:30",
+          title: "抵達仁川國際機場"
+        },
+        {
+          id: crypto.randomUUID(),
+          day: 1,
+          time: "12:00",
+          title: "搭乘 AREX 前往首爾市區"
+        },
+        {
+          id: crypto.randomUUID(),
+          day: 1,
+          time: "15:00",
+          title: "飯店入住與附近散步"
+        }
+      ],
+      expenses: [],
+      places: [
+        {
+          id: crypto.randomUUID(),
+          name: "景福宮",
+          category: "景點",
+          note: "可安排韓服體驗，建議上午前往。"
+        },
+        {
+          id: crypto.randomUUID(),
+          name: "聖水洞",
+          category: "咖啡",
+          note: "咖啡廳、快閃店與選物店集中。"
+        },
+        {
+          id: crypto.randomUUID(),
+          name: "弘大",
+          category: "購物",
+          note: "適合安排晚餐、逛街與夜間活動。"
+        }
+      ]
+    };
+
+    let state = loadState();
+
+    const elements = {
+      countdownNumber: document.querySelector("#countdownNumber"),
+      departureDateText: document.querySelector("#departureDateText"),
+      departureDate: document.querySelector("#departureDate"),
+      tripDays: document.querySelector("#tripDays"),
+      tripDaysSummary: document.querySelector("#tripDaysSummary"),
+      todoSummary: document.querySelector("#todoSummary"),
+      todoProgressBar: document.querySelector("#todoProgressBar"),
+      remainingBudgetSummary: document.querySelector(
+        "#remainingBudgetSummary"
+      ),
+      itineraryDay: document.querySelector("#itineraryDay"),
+      itineraryTime: document.querySelector("#itineraryTime"),
+      itineraryTitle: document.querySelector("#itineraryTitle"),
+      itineraryList: document.querySelector("#itineraryList"),
+      totalBudgetInput: document.querySelector("#totalBudgetInput"),
+      totalBudgetValue: document.querySelector("#totalBudgetValue"),
+      spentBudgetValue: document.querySelector("#spentBudgetValue"),
+      remainingBudgetValue: document.querySelector(
+        "#remainingBudgetValue"
+      ),
+      expenseName: document.querySelector("#expenseName"),
+      expenseAmount: document.querySelector("#expenseAmount"),
+      expenseList: document.querySelector("#expenseList"),
+      todoInput: document.querySelector("#todoInput"),
+      todoList: document.querySelector("#todoList"),
+      exchangeRate: document.querySelector("#exchangeRate"),
+      twdInput: document.querySelector("#twdInput"),
+      krwOutput: document.querySelector("#krwOutput"),
+      placeName: document.querySelector("#placeName"),
+      placeCategory: document.querySelector("#placeCategory"),
+      placeNote: document.querySelector("#placeNote"),
+      placeList: document.querySelector("#placeList"),
+      toast: document.querySelector("#toast")
+    };
+
+    function loadState() {
+      try {
+        const savedState = localStorage.getItem(STORAGE_KEY);
+
+        if (!savedState) {
+          return structuredClone(defaultState);
+        }
+
+        return {
+          ...structuredClone(defaultState),
+          ...JSON.parse(savedState)
+        };
+      } catch (error) {
+        console.error("讀取資料失敗：", error);
+        return structuredClone(defaultState);
+      }
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (error) {
+        console.error("儲存資料失敗：", error);
+        showToast("資料儲存失敗，請確認瀏覽器設定。");
+      }
+    }
+
+    function formatCurrency(value) {
+      return new Intl.NumberFormat("zh-TW", {
+        style: "currency",
+        currency: "TWD",
+        maximumFractionDigits: 0
+      }).format(Number(value) || 0);
+    }
+
+    function formatDate(dateString) {
+      const date = new Date(`${dateString}T00:00:00`);
+
+      return new Intl.DateTimeFormat("zh-TW", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        weekday: "short"
+      }).format(date);
+    }
+
+    function showToast(message) {
+      elements.toast.textContent = message;
+      elements.toast.classList.add("show");
+
+      window.clearTimeout(showToast.timer);
+
+      showToast.timer = window.setTimeout(() => {
+        elements.toast.classList.remove("show");
+      }, 2200);
+    }
+
+    function calculateDaysUntilDeparture() {
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+
+      const departure = new Date(`${state.departureDate}T00:00:00`);
+      const difference = departure.getTime() - now.getTime();
+
+      return Math.ceil(difference / 86400000);
+    }
+
+    function calculateSpentBudget() {
+      return state.expenses.reduce((total, expense) => {
+        return total + Number(expense.amount || 0);
+      }, 0);
+    }
+
+    function renderCountdown() {
+      const days = calculateDaysUntilDeparture();
+
+      if (days > 0) {
+        elements.countdownNumber.textContent = days;
+      } else if (days === 0) {
+        elements.countdownNumber.textContent = "今天";
+      } else {
+        elements.countdownNumber.textContent = "已出發";
+      }
+
+      elements.departureDateText.textContent = formatDate(
+        state.departureDate
+      );
+
+      elements.departureDate.value = state.departureDate;
+      elements.tripDays.value = state.tripDays;
+      elements.tripDaysSummary.textContent = `${state.tripDays} 天`;
+    }
+
+    function renderTodoSummary() {
+      const completedCount = state.todos.filter(
+        (todo) => todo.completed
+      ).length;
+
+      const totalCount = state.todos.length;
+
+      const progress =
+        totalCount === 0 ? 0 : (completedCount / totalCount) * 100;
+
+      elements.todoSummary.textContent =
+        `${completedCount} / ${totalCount}`;
+
+      elements.todoProgressBar.style.width = `${progress}%`;
+    }
+
+    function renderTodos() {
+      elements.todoList.innerHTML = "";
+
+      if (state.todos.length === 0) {
+        elements.todoList.innerHTML = `
+          <li class="empty-state">
+            目前沒有待辦事項。
+          </li>
+        `;
+
+        renderTodoSummary();
+        return;
+      }
+
+      state.todos.forEach((todo) => {
+        const listItem = document.createElement("li");
+
+        listItem.className =
+          `list-item ${todo.completed ? "completed" : ""}`;
+
+        listItem.innerHTML = `
+          <div class="list-item-main">
+            <input
+              class="checkbox"
+              type="checkbox"
+              ${todo.completed ? "checked" : ""}
+              aria-label="切換待辦完成狀態"
+            />
+
+            <span class="list-item-text"></span>
+          </div>
+
+          <button
+            class="button button-danger button-small"
+            type="button"
+          >
+            刪除
+          </button>
+        `;
+
+        listItem.querySelector(".list-item-text").textContent =
+          todo.text;
+
+        listItem
+          .querySelector(".checkbox")
+          .addEventListener("change", () => {
+            todo.completed = !todo.completed;
+            saveState();
+            renderTodos();
+          });
+
+        listItem
+          .querySelector(".button-danger")
+          .addEventListener("click", () => {
+            state.todos = state.todos.filter(
+              (item) => item.id !== todo.id
+            );
+
+            saveState();
+            renderTodos();
+            showToast("已刪除待辦事項。");
+          });
+
+        elements.todoList.appendChild(listItem);
+      });
+
+      renderTodoSummary();
+    }
+
+    function renderItineraryDayOptions() {
+      elements.itineraryDay.innerHTML = "";
+
+      for (let day = 1; day <= state.tripDays; day += 1) {
+        const option = document.createElement("option");
+        option.value = day;
+        option.textContent = `Day ${day}`;
+        elements.itineraryDay.appendChild(option);
+      }
+    }
+
+    function renderItinerary() {
+      elements.itineraryList.innerHTML = "";
+
+      for (let day = 1; day <= state.tripDays; day += 1) {
+        const dayEvents = state.itinerary
+          .filter((event) => Number(event.day) === day)
+          .sort((a, b) => a.time.localeCompare(b.time));
+
+        const dayContainer = document.createElement("article");
+        dayContainer.className = "timeline-day";
+
+        dayContainer.innerHTML = `
+          <div class="timeline-day-header">
+            <h3>Day ${day}</h3>
+            <span>${dayEvents.length} 個行程</span>
+          </div>
+
+          <div class="timeline-events"></div>
+        `;
+
+        const eventsContainer =
+          dayContainer.querySelector(".timeline-events");
+
+        if (dayEvents.length === 0) {
+          eventsContainer.innerHTML = `
+            <div class="empty-state" style="margin: 14px">
+              尚未安排這一天的行程。
+            </div>
+          `;
+        }
+
+        dayEvents.forEach((event) => {
+          const eventElement = document.createElement("div");
+          eventElement.className = "timeline-event";
+
+          eventElement.innerHTML = `
+            <div class="timeline-time"></div>
+
+            <div class="timeline-event-title"></div>
+
+            <button
+              class="button button-danger button-small"
+              type="button"
+            >
+              刪除
+            </button>
+          `;
+
+          eventElement.querySelector(".timeline-time").textContent =
+            event.time;
+
+          eventElement.querySelector(
+            ".timeline-event-title"
+          ).textContent = event.title;
+
+          eventElement
+            .querySelector(".button-danger")
+            .addEventListener("click", () => {
+              state.itinerary = state.itinerary.filter(
+                (item) => item.id !== event.id
+              );
+
+              saveState();
+              renderItinerary();
+              showToast("已刪除行程。");
+            });
+
+          eventsContainer.appendChild(eventElement);
+        });
+
+        elements.itineraryList.appendChild(dayContainer);
+      }
+    }
+
+    function renderBudget() {
+      const spent = calculateSpentBudget();
+      const remaining = Number(state.totalBudget) - spent;
+
+      elements.totalBudgetInput.value = state.totalBudget;
+      elements.totalBudgetValue.textContent = formatCurrency(
+        state.totalBudget
+      );
+
+      elements.spentBudgetValue.textContent = formatCurrency(spent);
+      elements.remainingBudgetValue.textContent =
+        formatCurrency(remaining);
+
+      elements.remainingBudgetSummary.textContent =
+        formatCurrency(remaining);
+
+      elements.expenseList.innerHTML = "";
+
+      if (state.expenses.length === 0) {
+        elements.expenseList.innerHTML = `
+          <div class="empty-state">
+            尚未新增支出項目。
+          </div>
+        `;
+
+        return;
+      }
+
+      state.expenses.forEach((expense) => {
+        const expenseElement = document.createElement("div");
+        expenseElement.className = "expense-item";
+
+        expenseElement.innerHTML = `
+          <div class="expense-name"></div>
+          <div class="expense-amount"></div>
+
+          <button
+            class="button button-danger button-small"
+            type="button"
+          >
+            刪除
+          </button>
+        `;
+
+        expenseElement.querySelector(".expense-name").textContent =
+          expense.name;
+
+        expenseElement.querySelector(".expense-amount").textContent =
+          formatCurrency(expense.amount);
+
+        expenseElement
+          .querySelector(".button-danger")
+          .addEventListener("click", () => {
+            state.expenses = state.expenses.filter(
+              (item) => item.id !== expense.id
+            );
+
+            saveState();
+            renderBudget();
+            showToast("已刪除支出項目。");
+          });
+
+        elements.expenseList.appendChild(expenseElement);
+      });
+    }
+
+    function renderCurrency() {
+      const rate = Number(state.exchangeRate) || 0;
+      const twd = Number(elements.twdInput.value) || 0;
+      const krw = twd * rate;
+
+      elements.exchangeRate.value = state.exchangeRate;
+
+      elements.krwOutput.value =
+        new Intl.NumberFormat("ko-KR", {
+          maximumFractionDigits: 0
+        }).format(krw) + " KRW";
+    }
+
+    function renderPlaces() {
+      elements.placeList.innerHTML = "";
+
+      if (state.places.length === 0) {
+        elements.placeList.innerHTML = `
+          <div class="empty-state" style="grid-column: 1 / -1">
+            尚未收藏任何景點。
+          </div>
+        `;
+
+        return;
+      }
+
+      state.places.forEach((place) => {
+        const placeElement = document.createElement("article");
+        placeElement.className = "place-card";
+
+        const mapUrl =
+          "https://www.google.com/maps/search/?api=1&query=" +
+          encodeURIComponent(`${place.name} Seoul`);
+
+        placeElement.innerHTML = `
+          <div>
+            <span class="hero-chip" style="
+              display: inline-block;
+              background: var(--surface-soft);
+              color: var(--primary);
+              border: 0;
+              margin-bottom: 10px;
+            "></span>
+
+            <h3></h3>
+          </div>
+
+          <p></p>
+
+          <div class="place-card-actions">
+            <a
+              class="button button-secondary button-small"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              地圖
+            </a>
+
+            <button
+              class="button button-danger button-small"
+              type="button"
+            >
+              刪除
+            </button>
+          </div>
+        `;
+
+        placeElement.querySelector(".hero-chip").textContent =
+          place.category;
+
+        placeElement.querySelector("h3").textContent = place.name;
+
+        placeElement.querySelector("p").textContent =
+          place.note || "尚未新增備註。";
+
+        placeElement.querySelector("a").href = mapUrl;
+
+        placeElement
+          .querySelector(".button-danger")
+          .addEventListener("click", () => {
+            state.places = state.places.filter(
+              (item) => item.id !== place.id
+            );
+
+            saveState();
+            renderPlaces();
+            showToast("已刪除收藏景點。");
+          });
+
+        elements.placeList.appendChild(placeElement);
+      });
+    }
+
+    function renderAll() {
+      renderCountdown();
+      renderItineraryDayOptions();
+      renderItinerary();
+      renderTodos();
+      renderBudget();
+      renderCurrency();
+      renderPlaces();
+    }
+
+    document
+      .querySelector("#saveSettingsButton")
+      .addEventListener("click", () => {
+        const departureDate = elements.departureDate.value;
+        const tripDays = Number(elements.tripDays.value);
+
+        if (!departureDate) {
+          showToast("請選擇出發日期。");
+          return;
+        }
+
+        if (!Number.isInteger(tripDays) || tripDays < 1) {
+          showToast("旅行天數至少需要 1 天。");
+          return;
+        }
+
+        state.departureDate = departureDate;
+        state.tripDays = Math.min(tripDays, 30);
+
+        state.itinerary = state.itinerary.filter(
+          (event) => Number(event.day) <= state.tripDays
+        );
+
+        saveState();
+        renderAll();
+        showToast("旅行設定已儲存。");
+      });
+
+    document
+      .querySelector("#addTodoButton")
+      .addEventListener("click", addTodo);
+
+    elements.todoInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        addTodo();
+      }
+    });
+
+    function addTodo() {
+      const text = elements.todoInput.value.trim();
+
+      if (!text) {
+        showToast("請輸入待辦事項。");
+        return;
+      }
+
+      state.todos.push({
+        id: crypto.randomUUID(),
+        text,
+        completed: false
+      });
+
+      elements.todoInput.value = "";
+
+      saveState();
+      renderTodos();
+      showToast("已新增待辦事項。");
+    }
+
+    document
+      .querySelector("#addItineraryButton")
+      .addEventListener("click", () => {
+        const day = Number(elements.itineraryDay.value);
+        const time = elements.itineraryTime.value;
+        const title = elements.itineraryTitle.value.trim();
+
+        if (!title) {
+          showToast("請輸入行程內容。");
+          return;
+        }
+
+        if (!time) {
+          showToast("請選擇行程時間。");
+          return;
+        }
+
+        state.itinerary.push({
+          id: crypto.randomUUID(),
+          day,
+          time,
+          title
+        });
+
+        elements.itineraryTitle.value = "";
+
+        saveState();
+        renderItinerary();
+        showToast("已新增行程。");
+      });
+
+    document
+      .querySelector("#saveBudgetButton")
+      .addEventListener("click", () => {
+        const totalBudget = Number(elements.totalBudgetInput.value);
+
+        if (!Number.isFinite(totalBudget) || totalBudget < 0) {
+          showToast("請輸入正確的預算金額。");
+          return;
+        }
+
+        state.totalBudget = totalBudget;
+
+        saveState();
+        renderBudget();
+        showToast("總預算已儲存。");
+      });
+
+    document
+      .querySelector("#addExpenseButton")
+      .addEventListener("click", () => {
+        const name = elements.expenseName.value.trim();
+        const amount = Number(elements.expenseAmount.value);
+
+        if (!name) {
+          showToast("請輸入支出項目。");
+          return;
+        }
+
+        if (!Number.isFinite(amount) || amount <= 0) {
+          showToast("請輸入正確的支出金額。");
+          return;
+        }
+
+        state.expenses.push({
+          id: crypto.randomUUID(),
+          name,
+          amount
+        });
+
+        elements.expenseName.value = "";
+        elements.expenseAmount.value = "";
+
+        saveState();
+        renderBudget();
+        showToast("已新增支出項目。");
+      });
+
+    elements.exchangeRate.addEventListener("input", () => {
+      const rate = Number(elements.exchangeRate.value);
+
+      if (Number.isFinite(rate) && rate > 0) {
+        state.exchangeRate = rate;
+        saveState();
+      }
+
+      renderCurrency();
+    });
+
+    elements.twdInput.addEventListener("input", renderCurrency);
+
+    document
+      .querySelector("#addPlaceButton")
+      .addEventListener("click", () => {
+        const name = elements.placeName.value.trim();
+        const category = elements.placeCategory.value;
+        const note = elements.placeNote.value.trim();
+
+        if (!name) {
+          showToast("請輸入景點名稱。");
+          return;
+        }
+
+        state.places.push({
+          id: crypto.randomUUID(),
+          name,
+          category,
+          note
+        });
+
+        elements.placeName.value = "";
+        elements.placeNote.value = "";
+
+        saveState();
+        renderPlaces();
+        showToast("已新增收藏景點。");
+      });
+
+    document.querySelectorAll(".nav-button").forEach((button) => {
+      button.addEventListener("click", () => {
+        const target = document.querySelector(
+          `#${button.dataset.target}`
+        );
+
+        target?.scrollIntoView({
+          behavior: "smooth",
+          block: "start"
+        });
+      });
+    });
+
+    renderAll();
+  </script>
+</body>
+</html>
